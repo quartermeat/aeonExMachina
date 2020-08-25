@@ -42,7 +42,7 @@ type livingObjAttributes struct {
 }
 
 //LivingObjects is a slice of all the livingObjects
-type LivingObjects []livingObject
+type LivingObjects []*livingObject
 
 func creatNewLivingObject(animationKeys []string, animations map[string][]pixel.Rect, sheet pixel.Picture, position pixel.Vec) livingObject {
 	randomAnimationKey := animationKeys[rand.Intn(len(animationKeys))]
@@ -65,7 +65,12 @@ func creatNewLivingObject(animationKeys []string, animations map[string][]pixel.
 		},
 	}
 	livingObj.setHitBox()
+	NextID++
 	return livingObj
+}
+
+func (livingObj livingObject) getID() int {
+	return livingObj.id
 }
 
 func (livingObj *livingObject) setHitBox() {
@@ -152,7 +157,7 @@ func (livingObj livingObject) draw(win *pixelgl.Window, drawHitBox bool, waitGro
 		imd.Rectangle(1)
 		imd.Draw(win)
 	}
-	//waitGroup.Done()
+	// waitGroup.Done()
 }
 
 //collection functions
@@ -163,12 +168,10 @@ func (livingObjs LivingObjects) fastRemoveIndexFromLivingObjects(index int) Livi
 	return livingObjs
 }
 
-func (livingObjs LivingObjects) updateAllLivingObjects(dt float64, gameObjs GameObjects, waitGroup *sync.WaitGroup) LivingObjects {
-	for _, obj := range livingObjs {
-		//waitGroup.Add(1)
-		obj.update(dt, gameObjs, waitGroup)
+func (livingObjs LivingObjects) updateAllLivingObjects(dt float64, gameObjs GameObjects, waitGroup *sync.WaitGroup) {
+	for i := 0; i < len(livingObjs); i++ {
+		livingObjs[i].update(dt, gameObjs, waitGroup)
 	}
-	return livingObjs
 }
 
 func (livingObjs LivingObjects) drawAllLivingObjects(win *pixelgl.Window, drawHitBox bool, waitGroup *sync.WaitGroup) {
@@ -178,18 +181,17 @@ func (livingObjs LivingObjects) drawAllLivingObjects(win *pixelgl.Window, drawHi
 	}
 }
 
-// func (livingObjs LivingObjects) appendLivingObject(gameObjs GameObjects, animationKeys []string, animations map[string][]pixel.Rect, sheet pixel.Picture, position pixel.Vec) (LivingObjects, GameObjects) {
-// 	if len(livingObjs) >= maxLivingObjects {
-// 		return nil, nil
-// 	}
-// 	if len(gameObjs) >= maxGameObjects {
-// 		return nil, nil
-// 	}
-// 	newLivingObject := creatNewLivingObject(animationKeys, animations, sheet, position)
-// 	NextID++
-// 	gameObjs = gameObjs.appendGameObject(&newLivingObject)
-// 	return append(livingObjs, newLivingObject), gameObjs
-// }
+func (livingObjs LivingObjects) appendLivingObject(gameObjs GameObjects, animationKeys []string, animations map[string][]pixel.Rect, sheet pixel.Picture, position pixel.Vec) (LivingObjects, GameObjects) {
+	if len(livingObjs) >= maxLivingObjects {
+		return livingObjs, gameObjs
+	}
+	if len(gameObjs) >= maxGameObjects {
+		return livingObjs, gameObjs
+	}
+	newLivingObject := creatNewLivingObject(animationKeys, animations, sheet, position)
+	gameObjs = gameObjs.appendGameObject(&newLivingObject)
+	return append(livingObjs, &newLivingObject), gameObjs
+}
 
 func (livingObjs LivingObjects) getSelectedLivingObj(position pixel.Vec) (livingObject, int, bool, error) {
 	foundObject := true
@@ -200,8 +202,8 @@ func (livingObjs LivingObjects) getSelectedLivingObj(position pixel.Vec) (living
 	}
 	for index, object := range livingObjs {
 		if object.hitBox.Contains(position) {
-			return object, index, foundObject, nil
+			return *object, index, foundObject, nil
 		}
 	}
-	return livingObjs[0], noIndex, !foundObject, nil
+	return *livingObjs[0], noIndex, !foundObject, nil
 }

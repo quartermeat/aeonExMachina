@@ -18,7 +18,7 @@ func run() {
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Aeon Ex Machina",
-		Bounds: pixel.R(0, 0, 1024, 768),
+		Bounds: pixel.R(0, 0, 1280, 960),
 		VSync:  false,
 	}
 
@@ -44,10 +44,10 @@ func run() {
 		camZoom      = 1.0
 		camZoomSpeed = 1.2
 		gameObjs     GameObjects
-		//livingObjs   LivingObjects
-		frames     = 0
-		second     = time.Tick(time.Second)
-		drawHitBox = false
+		livingObjs   LivingObjects
+		frames       = 0
+		second       = time.Tick(time.Second)
+		drawHitBox   = false
 	)
 
 	selectedSprite := pixel.NewSprite(coinSheet, coinFrame)
@@ -95,16 +95,16 @@ func run() {
 					fmt.Println("no object selected")
 				}
 			} else {
-				//mouse := cam.Unproject(win.MousePosition())
+				mouse := cam.Unproject(win.MousePosition())
 				//add object based on selectedObj
-				//livingObjs, gameObjs = livingObjs.appendLivingObject(gameObjs, pinkAnimKeys, pinkAnims, pinkSheet, mouse)
+				livingObjs, gameObjs = livingObjs.appendLivingObject(gameObjs, pinkAnimKeys, pinkAnims, pinkSheet, mouse)
 			}
 		}
 
 		if win.Pressed(pixelgl.MouseButtonLeft) {
 			if win.Pressed(pixelgl.KeyLeftShift) {
-				//mouse := cam.Unproject(win.MousePosition())
-				//livingObjs, gameObjs = livingObjs.appendLivingObject(gameObjs, pinkAnimKeys, pinkAnims, pinkSheet, mouse)
+				mouse := cam.Unproject(win.MousePosition())
+				livingObjs, gameObjs = livingObjs.appendLivingObject(gameObjs, pinkAnimKeys, pinkAnims, pinkSheet, mouse)
 			}
 		}
 
@@ -128,44 +128,17 @@ func run() {
 			camZoom *= math.Pow(camZoomSpeed, win.MouseScroll().Y)
 		}
 
-		win.Clear(colornames.Black)
-
 		//this is craziness
 		var waitGroup sync.WaitGroup
 
-		// livingObj := creatNewLivingObject(pinkAnimKeys, pinkAnims, pinkSheet, pixel.V(0, 0))
-		randomAnimationKey := pinkAnimKeys[rand.Intn(len(pinkAnimKeys))]
-		randomAnimationFrame := rand.Intn(len(pinkAnims[randomAnimationKey]))
-		livingObj := livingObject{
-			id:       NextID,
-			sheet:    pinkSheet,
-			sprite:   pixel.NewSprite(pinkSheet, pinkAnims[randomAnimationKey][randomAnimationFrame]),
-			anims:    pinkAnims,
-			rate:     1.0 / 10,
-			dir:      0,
-			position: pixel.V(0, 0),
-			vel:      pixel.V(0, 0),
-			matrix:   pixel.IM.Moved(pixel.V(0, 0)),
-			state:    idle,
-			attributes: objAttributes{
-				initiative: 1 + rand.Float64()*(maxInitiative-1),
-				speed:      1 + rand.Float64()*(maxSpeed-1),
-				stamina:    1 + rand.Float64()*(maxStamina-1),
-			},
-		}
-		livingObj.setHitBox()
+		win.Clear(colornames.Black)
 
-		//handle updates
-		// livingObjs = livingObjs.updateAllLivingObjects(dt, gameObjs, &waitGroup)
-		// livingObj.update(dt, gameObjs, &waitGroup)
-		waitGroup.Wait()
 		//handle drawing
-		// livingObjs.drawAllLivingObjects(win, drawHitBox, &waitGroup)
-		// livingObj.draw(win, drawHitBox, &waitGroup)
-		livingObj.counter += dt
-		interval := int(math.Floor(livingObj.counter / livingObj.rate))
-		livingObj.sprite.Set(livingObj.sheet, livingObj.anims["idle"][interval%len(livingObj.anims["idle"])])
-		livingObj.sprite.Draw(win, livingObj.matrix)
+
+		livingObjs.updateAllLivingObjects(dt, gameObjs, &waitGroup)
+		waitGroup.Wait()
+
+		livingObjs.drawAllLivingObjects(win, drawHitBox, &waitGroup)
 		waitGroup.Wait()
 
 		if win.MouseInsideWindow() {
