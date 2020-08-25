@@ -44,9 +44,10 @@ func run() {
 		camZoom      = 1.0
 		camZoomSpeed = 1.2
 		gameObjs     GameObjects
-		frames       = 0
-		second       = time.Tick(time.Second)
-		drawHitBox   = false
+		//livingObjs   LivingObjects
+		frames     = 0
+		second     = time.Tick(time.Second)
+		drawHitBox = false
 	)
 
 	selectedSprite := pixel.NewSprite(coinSheet, coinFrame)
@@ -67,7 +68,7 @@ func run() {
 				fmt.Printf(err.Error())
 			}
 			if hit {
-				fmt.Println("object id:", selectedObj.id, " removed")
+				fmt.Println("object id:", selectedObj.getID(), " removed")
 				gameObjs = gameObjs.fastRemoveIndex(index)
 			} else {
 				fmt.Println("no object selected")
@@ -89,23 +90,21 @@ func run() {
 					fmt.Printf(err.Error())
 				}
 				if hit {
-					fmt.Println("object id:", selectedObj.id)
-					fmt.Println("object speed:", selectedObj.attributes.speed)
-					fmt.Println("object initiative:", selectedObj.attributes.initiative)
-					fmt.Println("object stamina:", selectedObj.attributes.stamina)
+					fmt.Println("object id:", selectedObj.getID())
 				} else {
 					fmt.Println("no object selected")
 				}
 			} else {
-				mouse := cam.Unproject(win.MousePosition())
-				gameObjs = gameObjs.addGameObject(pinkAnimKeys, pinkAnims, pinkSheet, mouse)
+				//mouse := cam.Unproject(win.MousePosition())
+				//add object based on selectedObj
+				//livingObjs, gameObjs = livingObjs.appendLivingObject(gameObjs, pinkAnimKeys, pinkAnims, pinkSheet, mouse)
 			}
 		}
 
 		if win.Pressed(pixelgl.MouseButtonLeft) {
 			if win.Pressed(pixelgl.KeyLeftShift) {
-				mouse := cam.Unproject(win.MousePosition())
-				gameObjs = gameObjs.addGameObject(pinkAnimKeys, pinkAnims, pinkSheet, mouse)
+				//mouse := cam.Unproject(win.MousePosition())
+				//livingObjs, gameObjs = livingObjs.appendLivingObject(gameObjs, pinkAnimKeys, pinkAnims, pinkSheet, mouse)
 			}
 		}
 
@@ -134,11 +133,39 @@ func run() {
 		//this is craziness
 		var waitGroup sync.WaitGroup
 
+		// livingObj := creatNewLivingObject(pinkAnimKeys, pinkAnims, pinkSheet, pixel.V(0, 0))
+		randomAnimationKey := pinkAnimKeys[rand.Intn(len(pinkAnimKeys))]
+		randomAnimationFrame := rand.Intn(len(pinkAnims[randomAnimationKey]))
+		livingObj := livingObject{
+			id:       NextID,
+			sheet:    pinkSheet,
+			sprite:   pixel.NewSprite(pinkSheet, pinkAnims[randomAnimationKey][randomAnimationFrame]),
+			anims:    pinkAnims,
+			rate:     1.0 / 10,
+			dir:      0,
+			position: pixel.V(0, 0),
+			vel:      pixel.V(0, 0),
+			matrix:   pixel.IM.Moved(pixel.V(0, 0)),
+			state:    idle,
+			attributes: objAttributes{
+				initiative: 1 + rand.Float64()*(maxInitiative-1),
+				speed:      1 + rand.Float64()*(maxSpeed-1),
+				stamina:    1 + rand.Float64()*(maxStamina-1),
+			},
+		}
+		livingObj.setHitBox()
+
 		//handle updates
-		gameObjs.updateAll(dt, &waitGroup)
+		// livingObjs = livingObjs.updateAllLivingObjects(dt, gameObjs, &waitGroup)
+		// livingObj.update(dt, gameObjs, &waitGroup)
 		waitGroup.Wait()
 		//handle drawing
-		gameObjs.drawAll(win, drawHitBox, &waitGroup)
+		// livingObjs.drawAllLivingObjects(win, drawHitBox, &waitGroup)
+		// livingObj.draw(win, drawHitBox, &waitGroup)
+		livingObj.counter += dt
+		interval := int(math.Floor(livingObj.counter / livingObj.rate))
+		livingObj.sprite.Set(livingObj.sheet, livingObj.anims["idle"][interval%len(livingObj.anims["idle"])])
+		livingObj.sprite.Draw(win, livingObj.matrix)
 		waitGroup.Wait()
 
 		if win.MouseInsideWindow() {
