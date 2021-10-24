@@ -13,38 +13,26 @@ type objectState int
 const (
 	idle   objectState = iota
 	moving             //incoming
+	selected
 )
 
 const (
-	maxGameObjects = 800
+	maxGameObjects = 400
 	maxInitiative  = 10.0
 	maxSpeed       = 100.0
 	maxStamina     = 100.0
 )
 
-//NextID is the next assignable ID
+//NextID is the next assignable object ID
 var NextID = 0
 
-// type gameObject struct {
-// 	id      int
-// 	sheet   pixel.Picture
-// 	anims   map[string][]pixel.Rect
-// 	sprite  *pixel.Sprite
-// 	rate    float64
-// 	state   objectState
-// 	counter float64
-// 	dir     float64
-
-// 	vel        pixel.Vec
-// 	hitBox     pixel.Rect
-// 	position   pixel.Vec
-// 	matrix     pixel.Matrix
-// 	attributes objAttributes
-// }
-
 type gameObject interface {
+	ObjectName() string
+	Sprite() *pixel.Sprite
+	Sheet() pixel.Picture
+	AnimationKeys() []string
+	Animations() map[string][]pixel.Rect
 	getID() int
-	createNewObject(animationKeys []string, animations map[string][]pixel.Rect, sheet pixel.Picture, position pixel.Vec) *gameObject
 	setHitBox()
 	getHitBox() pixel.Rect
 	update(dt float64, gameObjects GameObjects, waitGroup *sync.WaitGroup)
@@ -52,36 +40,53 @@ type gameObject interface {
 	draw(win *pixelgl.Window, drawHitBox bool, waitGroup *sync.WaitGroup)
 }
 
-type objAttributes struct {
-	initiative float64
-	speed      float64
-	stamina    float64
-}
-
 //GameObjects is a slice of all the gameObjects
 type GameObjects []gameObject
 
 func (gameObjs GameObjects) fastRemoveIndex(index int) GameObjects {
 	gameObjs[index] = gameObjs[len(gameObjs)-1] // Copy last element to index i.
-	gameObjs[len(gameObjs)-1] = nil             // Erase last element (write zero value).
 	gameObjs = gameObjs[:len(gameObjs)-1]       // Truncate slice.
 	return gameObjs
 }
 
 func (gameObjs GameObjects) appendGameObject(newObject gameObject) GameObjects {
 	if len(gameObjs) >= maxGameObjects {
-		return nil
+		return gameObjs
 	}
 	gameObjs = append(gameObjs, newObject)
 	return gameObjs
+}
+
+func (gameObjs GameObjects) appendLivingObject(animationKeys []string, animations map[string][]pixel.Rect, sheet pixel.Picture, position pixel.Vec) GameObjects {
+	newLivingObject := createNewLivingObject(animationKeys, animations, sheet, position)
+	return gameObjs.appendGameObject(&newLivingObject)
+}
+
+func (gameObjs GameObjects) appendGibletObject(animationKeys []string, animations map[string][]pixel.Rect, sheet pixel.Picture, position pixel.Vec) GameObjects {
+	newGibletObject := createNewGibletObject(animationKeys, animations, sheet, position)
+	return gameObjs.appendGameObject(&newGibletObject)
+}
+
+func (gameObjs GameObjects) updateAllObjects(dt float64, waitGroup *sync.WaitGroup) {
+	for _, currentObj := range gameObjs {
+		waitGroup.Add(1)
+		go currentObj.update(dt, gameObjs, waitGroup)
+	}
+}
+
+func (gameObjs GameObjects) drawAllObjects(win *pixelgl.Window, drawHitBox bool, waitGroup *sync.WaitGroup) {
+	for _, obj := range gameObjs {
+		waitGroup.Add(1)
+		go obj.draw(win, drawHitBox, waitGroup)
+	}
 }
 
 func (gameObjs GameObjects) getSelectedGameObj(position pixel.Vec) (gameObject, int, bool, error) {
 	foundObject := true
 	noIndex := -1
 
-	if gameObjs == nil {
-		return nil, noIndex, !foundObject, errors.New("no game object exist")
+	if gameObjs == nil || len(gameObjs) == 0 {
+		return nil, noIndex, !foundObject, errors.New("getSelectedGameObj: no game object exist")
 	}
 	for index, object := range gameObjs {
 		if object.getHitBox().Contains(position) {

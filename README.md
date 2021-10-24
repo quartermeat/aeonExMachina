@@ -1,8 +1,11 @@
-Going thru some of the github.com/faiface/pixel examples to become more familiar with Go
+Using github.com/faiface/pixel to create a simulation game in Go
 
-loadAssets.go contains the load sprite animations function from this example
+Controls                        
+'0': select living object for placement
+'1': select giblet object for placement
+'LM Click': place object selected for placement
+'Ctrl + LM Click': select an object
 
-https://github.com/faiface/pixel-examples/tree/master/platformer
 
 What it currently looks like:
 https://youtu.be/m09O-xj6gfM
