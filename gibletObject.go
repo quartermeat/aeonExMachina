@@ -30,7 +30,7 @@ type gibletObjAttributes struct {
 	value int
 }
 
-//#region gameObject implementation
+//#region GAME OBJECT IMPLEMENTATION
 
 func (gibletObj *GibletObject) ObjectName() string {
 	return "Giblet"

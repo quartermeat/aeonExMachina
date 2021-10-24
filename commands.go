@@ -25,6 +25,8 @@ func (commands Commands) executeCommands(waitGroup *sync.WaitGroup) {
 	}
 }
 
+//#region ADD OBJECT COMMAND
+
 type addObjectCommand struct {
 	gameObjs      *GameObjects
 	objectToPlace IGameObject
@@ -57,6 +59,10 @@ func (objects *GameObjects) AddObject(newObject IGameObject, newPosition pixel.V
 	}
 }
 
+//#endregion
+
+//#region REMOVE OBJECT COMMAND
+
 type removeObjectCommand struct {
 	gameObjs *GameObjects
 	position pixel.Vec
@@ -85,3 +91,5 @@ func (objects *GameObjects) RemoveObject(fromPosition pixel.Vec) ICommand {
 		position: fromPosition,
 	}
 }
+
+//#endregion

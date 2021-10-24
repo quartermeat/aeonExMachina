@@ -33,7 +33,7 @@ type livingObjAttributes struct {
 	stamina    float64
 }
 
-//#region gameObject implementation
+//#region GAMEOBJECT IMPLEMENTATION
 
 func (livingObj *livingObject) ObjectName() string {
 	return "Living"

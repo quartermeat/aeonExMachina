@@ -14,11 +14,6 @@ import (
 
 func run() {
 
-	var (
-		livingObjectAssets ObjectAssets
-		gibletObjectAssets ObjectAssets
-	)
-
 	cfg := pixelgl.WindowConfig{
 		Title:  "Aeon Ex Machina",
 		Bounds: pixel.R(0, 0, 1280, 960),
@@ -30,7 +25,24 @@ func run() {
 		panic(err)
 	}
 
+	// start command server
 	go StartServer()
+
+	var (
+		camPos             = pixel.ZV
+		camSpeed           = 500.0
+		camZoom            = 1.0
+		camZoomSpeed       = 1.2
+		gameObjs           GameObjects
+		gameCommands       = make(Commands)
+		objectToPlace      IGameObject
+		frames             = 0
+		second             = time.Tick(time.Second)
+		drawHitBox         = false
+		inputHandler       InputHandler
+		livingObjectAssets ObjectAssets
+		gibletObjectAssets ObjectAssets
+	)
 
 	//load assets
 	err = livingObjectAssets.SetAssets("assets/spriteSheet.png", "assets/pinkAnimations.csv", 32)
@@ -42,21 +54,8 @@ func run() {
 		panic(err)
 	}
 
+	//seed rng
 	rand.Seed(time.Now().UnixNano())
-
-	var (
-		camPos        = pixel.ZV
-		camSpeed      = 500.0
-		camZoom       = 1.0
-		camZoomSpeed  = 1.2
-		gameObjs      GameObjects
-		gameCommands  = make(Commands)
-		objectToPlace IGameObject
-		frames        = 0
-		second        = time.Tick(time.Second)
-		drawHitBox    = false
-		inputHandler  InputHandler
-	)
 
 	last := time.Now()
 	for !win.Closed() {
