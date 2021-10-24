@@ -35,7 +35,6 @@ func run() {
 		camZoomSpeed       = 1.2
 		gameObjs           GameObjects
 		gameCommands       = make(Commands)
-		objectToPlace      IGameObject
 		frames             = 0
 		second             = time.Tick(time.Second)
 		drawHitBox         = false
@@ -66,7 +65,6 @@ func run() {
 		cam := pixel.IM.Scaled(camPos, camZoom).Moved(win.Bounds().Center().Sub(camPos))
 		win.SetMatrix(cam)
 
-		inputHandler.SetObjectToPlace(objectToPlace)
 		inputHandler.HandleInput(
 			win,
 			&cam,

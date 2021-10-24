@@ -9,16 +9,14 @@ import (
 )
 
 type InputHandler struct {
+	initialized    bool
 	selectedObject IGameObject
 	objectToPlace  IGameObject
 }
 
-func (input *InputHandler) SetSelectedObject(object IGameObject) {
-	input.selectedObject = object
-}
-
-func (input *InputHandler) SetObjectToPlace(object IGameObject) {
+func (input *InputHandler) InitializeObjectToPlace(object IGameObject) {
 	input.objectToPlace = object
+	input.initialized = true
 }
 
 func (input *InputHandler) HandleInput(
@@ -35,6 +33,9 @@ func (input *InputHandler) HandleInput(
 	camPos *pixel.Vec,
 	drawHitBox *bool,
 ) {
+	if !input.initialized {
+		input.InitializeObjectToPlace(getShallowLivingObject(livingAssets))
+	}
 
 	//select giblet
 	if win.JustPressed(pixelgl.Key0) {
@@ -93,9 +94,9 @@ func (input *InputHandler) HandleInput(
 	}
 
 	//toggle hit box draw
-	// if win.JustPressed(pixelgl.KeyH) {
-	// 	drawHitBox = !drawHitBox
-	// }
+	if win.JustPressed(pixelgl.KeyH) {
+		*drawHitBox = !*drawHitBox
+	}
 
 	//move camera
 	if win.Pressed(pixelgl.KeyA) {
