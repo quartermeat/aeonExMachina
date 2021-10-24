@@ -65,13 +65,6 @@ func run() {
 		cam := pixel.IM.Scaled(camPos, camZoom).Moved(win.Bounds().Center().Sub(camPos))
 		win.SetMatrix(cam)
 
-		//handle removing an object
-		if win.JustPressed(pixelgl.MouseButtonRight) && win.Pressed(pixelgl.KeyLeftControl) {
-			mouse := cam.Unproject(win.MousePosition())
-			//add a command to commands
-			gameCommands[fmt.Sprintf("RemoveObject x:%f, y:%f", mouse.X, mouse.Y)] = gameObjs.RemoveObject(mouse)
-		}
-
 		//select giblet
 		if win.JustPressed(pixelgl.Key0) {
 			switch objectToPlace.(type) {
@@ -110,14 +103,18 @@ func run() {
 		//handle ctrl functions
 		if win.Pressed(pixelgl.KeyLeftControl) {
 			win.SetCursorVisible(true)
-			//select an object
-			if win.JustPressed(pixelgl.MouseButtonLeft) {
+			if win.JustPressed(pixelgl.MouseButtonRight) {
+				mouse := cam.Unproject(win.MousePosition())
+				//add a command to commands
+				gameCommands[fmt.Sprintf("RemoveObject x:%f, y:%f", mouse.X, mouse.Y)] = gameObjs.RemoveObject(mouse)
+			}
+			if win.JustPressed(pixelgl.MouseButtonLeft) { //ctrl + left click
 				mouse := cam.Unproject(win.MousePosition())
 				newSelectedObject, _, hit, err := gameObjs.getSelectedGameObj(mouse)
 				if err != nil {
 					fmt.Print(err.Error())
 				}
-				if hit {
+				if hit { //hit object
 					//unselect last object
 					if selectedObject != nil {
 						selectedObject.changeState(idle)
@@ -136,8 +133,8 @@ func run() {
 						}
 					}
 				} else {
-					//add move command here
-					fmt.Println("destination selected")
+					//ctrl + LM click && no object hit
+					fmt.Println("ctrl + LM click on empty space")
 				}
 			}
 		}
