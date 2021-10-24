@@ -34,12 +34,10 @@ func run() {
 
 	//load assets
 	err = livingObjectAssets.SetAssets("assets/spriteSheet.png", "assets/pinkAnimations.csv", 32)
-	// pinkSheet, pinkAnims, pinkAnimKeys, err := loadCellAnimationSheet("assets/spriteSheet.png", "assets/pinkAnimations.csv", 32)
 	if err != nil {
 		panic(err)
 	}
 	err = gibletObjectAssets.SetAssets("assets/spriteSheet.png", "assets/gibletAnimations.csv", 16)
-	// gibletSheet, gibletAnims, gibletAnimKeys, err := loadGibletAnimationSheet("assets/spriteSheet.png", "assets/gibletAnimations.csv", 16)
 	if err != nil {
 		panic(err)
 	}
