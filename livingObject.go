@@ -12,15 +12,13 @@ import (
 
 type livingObject struct {
 	id          int
-	sheet       pixel.Picture
-	animKeys    []string
-	anims       map[string][]pixel.Rect
+	assets      ObjectAssets
 	sprite      *pixel.Sprite
 	rate        float64
-	state       objectState
+	state       ObjectState
 	counter     float64
 	dir         float64
-	giblet      *gibletObject
+	giblet      *GibletObject
 	destination pixel.Vec
 	vel         pixel.Vec
 	hitBox      pixel.Rect
@@ -45,16 +43,8 @@ func (livingObj *livingObject) Sprite() *pixel.Sprite {
 	return livingObj.sprite
 }
 
-func (livingObj *livingObject) Sheet() pixel.Picture {
-	return livingObj.sheet
-}
-
-func (livingObj *livingObject) AnimationKeys() []string {
-	return livingObj.animKeys
-}
-
-func (livingObj *livingObject) Animations() map[string][]pixel.Rect {
-	return livingObj.anims
+func (livingObj *livingObject) GetAssets() ObjectAssets {
+	return livingObj.assets
 }
 
 func (livingObj *livingObject) getID() int {
@@ -82,7 +72,7 @@ func (livingObj *livingObject) update(dt float64, gameObjects GameObjects, waitG
 	case idle:
 		{
 			//update idle animation
-			livingObj.sprite.Set(livingObj.sheet, livingObj.anims["idle"][interval%len(livingObj.anims["idle"])])
+			livingObj.sprite.Set(livingObj.assets.sheet, livingObj.assets.anims["idle"][interval%len(livingObj.assets.anims["idle"])])
 
 			livingObj.attributes.stamina += livingObj.counter
 
@@ -94,7 +84,7 @@ func (livingObj *livingObject) update(dt float64, gameObjects GameObjects, waitG
 	case moving:
 		{
 			//update moving animation
-			livingObj.sprite.Set(livingObj.sheet, livingObj.anims["moving"][interval%len(livingObj.anims["moving"])])
+			livingObj.sprite.Set(livingObj.assets.sheet, livingObj.assets.anims["moving"][interval%len(livingObj.assets.anims["moving"])])
 			//invert x axis
 			livingObj.vel.X = livingObj.attributes.speed * math.Sin(livingObj.dir) * -1
 			livingObj.vel.Y = livingObj.attributes.speed * math.Cos(livingObj.dir)
@@ -116,7 +106,7 @@ func (livingObj *livingObject) update(dt float64, gameObjects GameObjects, waitG
 				if livingObj.hitBox.Intersects(otherObj.getHitBox()) && otherObj.getID() != livingObj.getID() {
 					//handle collisions with other objects here
 					switch otherOject := otherObj.(type) {
-					case *gibletObject:
+					case *GibletObject:
 						{
 							livingObj.giblet = otherOject
 							// if livingObj.giblet.host != nil && livingObj.giblet.host != livingObj {
@@ -141,7 +131,7 @@ func (livingObj *livingObject) update(dt float64, gameObjects GameObjects, waitG
 	case selected:
 		{
 			//make idle
-			livingObj.sprite.Set(livingObj.sheet, livingObj.anims["idle"][interval%len(livingObj.anims["idle"])])
+			livingObj.sprite.Set(livingObj.assets.sheet, livingObj.assets.anims["idle"][interval%len(livingObj.assets.anims["idle"])])
 			livingObj.attributes.stamina += livingObj.counter
 		}
 	}
@@ -149,7 +139,7 @@ func (livingObj *livingObject) update(dt float64, gameObjects GameObjects, waitG
 	waitGroup.Done()
 }
 
-func (livingObj *livingObject) changeState(newState objectState) {
+func (livingObj *livingObject) changeState(newState ObjectState) {
 	livingObj.state = newState
 	livingObj.counter = 0
 	switch newState {
@@ -180,13 +170,11 @@ func (livingObj *livingObject) draw(win *pixelgl.Window, drawHitBox bool, waitGr
 
 //#endregion
 
-func getShallowLivingObject(livingAnimKeys []string, livingAnims map[string][]pixel.Rect, livingSheet pixel.Picture) *livingObject {
+func getShallowLivingObject(objectAssets ObjectAssets) *livingObject {
 	return &livingObject{
 		id:       -1,
-		sheet:    livingSheet,
-		sprite:   pixel.NewSprite(livingSheet, livingAnims["idle"][0]),
-		animKeys: livingAnimKeys,
-		anims:    livingAnims,
+		assets:   objectAssets,
+		sprite:   pixel.NewSprite(objectAssets.sheet, objectAssets.anims["idle"][0]),
 		rate:     1.0 / 2,
 		dir:      0,
 		position: pixel.V(0, 0),
@@ -202,15 +190,13 @@ func getShallowLivingObject(livingAnimKeys []string, livingAnims map[string][]pi
 	}
 }
 
-func createNewLivingObject(animationKeys []string, animations map[string][]pixel.Rect, sheet pixel.Picture, position pixel.Vec) livingObject {
-	randomAnimationKey := animationKeys[rand.Intn(len(animationKeys))]
-	randomAnimationFrame := rand.Intn(len(animations[randomAnimationKey]))
+func createNewLivingObject(objectAssets ObjectAssets, position pixel.Vec) livingObject {
+	randomAnimationKey := objectAssets.animKeys[rand.Intn(len(objectAssets.animKeys))]
+	randomAnimationFrame := rand.Intn(len(objectAssets.anims[randomAnimationKey]))
 	livingObj := livingObject{
 		id:       NextID,
-		sheet:    sheet,
-		sprite:   pixel.NewSprite(sheet, animations[randomAnimationKey][randomAnimationFrame]),
-		animKeys: animationKeys,
-		anims:    animations,
+		assets:   objectAssets,
+		sprite:   pixel.NewSprite(objectAssets.sheet, objectAssets.anims[randomAnimationKey][randomAnimationFrame]),
 		rate:     1.0 / 10,
 		dir:      0,
 		giblet:   nil,

@@ -8,10 +8,10 @@ import (
 )
 
 //Commands is the map of commands to execute
-type Commands map[string]Command
+type Commands map[string]ICommand
 
-//Command interface is used to execute game commands
-type Command interface {
+//ICommand interface is used to execute game commands
+type ICommand interface {
 	execute(*sync.WaitGroup)
 }
 
@@ -26,23 +26,21 @@ func (commands Commands) executeCommands(waitGroup *sync.WaitGroup) {
 }
 
 type addObjectCommand struct {
-	gameObjs       *GameObjects
-	objectToPlace  gameObject
-	position       pixel.Vec
-	animationSheet pixel.Picture
-	animations     map[string][]pixel.Rect
-	animationKeys  []string
+	gameObjs      *GameObjects
+	objectToPlace IGameObject
+	position      pixel.Vec
+	objectAssets  ObjectAssets
 }
 
 func (command *addObjectCommand) execute(waitGroup *sync.WaitGroup) {
 	switch command.objectToPlace.(type) {
 	case *livingObject:
 		{
-			*command.gameObjs = command.gameObjs.appendLivingObject(command.animationKeys, command.animations, command.animationSheet, command.position)
+			*command.gameObjs = command.gameObjs.appendLivingObject(command.objectAssets, command.position)
 		}
-	case *gibletObject:
+	case *GibletObject:
 		{
-			*command.gameObjs = command.gameObjs.appendGibletObject(command.animationKeys, command.animations, command.animationSheet, command.position)
+			*command.gameObjs = command.gameObjs.appendGibletObject(command.objectAssets, command.position)
 		}
 	}
 
@@ -50,14 +48,12 @@ func (command *addObjectCommand) execute(waitGroup *sync.WaitGroup) {
 }
 
 //AddObject allows for the addition of a game object
-func (objects *GameObjects) AddObject(newObject gameObject, newPosition pixel.Vec) Command {
+func (objects *GameObjects) AddObject(newObject IGameObject, newPosition pixel.Vec) ICommand {
 	return &addObjectCommand{
-		gameObjs:       objects,
-		position:       newPosition,
-		objectToPlace:  newObject,
-		animationSheet: newObject.Sheet(),
-		animations:     newObject.Animations(),
-		animationKeys:  newObject.AnimationKeys(),
+		gameObjs:      objects,
+		position:      newPosition,
+		objectToPlace: newObject,
+		objectAssets:  newObject.GetAssets(),
 	}
 }
 
@@ -83,7 +79,7 @@ func (command *removeObjectCommand) execute(waitGroup *sync.WaitGroup) {
 }
 
 //RemoveObject allows for the removal of a game Object based on Vec location
-func (objects *GameObjects) RemoveObject(fromPosition pixel.Vec) Command {
+func (objects *GameObjects) RemoveObject(fromPosition pixel.Vec) ICommand {
 	return &removeObjectCommand{
 		gameObjs: objects,
 		position: fromPosition,
