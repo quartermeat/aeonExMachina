@@ -109,6 +109,10 @@ func (gibletObj *GibletObject) draw(win *pixelgl.Window, drawHitBox bool, waitGr
 	waitGroup.Done()
 }
 
+func (gibletObj *GibletObject) moveToPosition(position pixel.Vec) {
+	//doesn't move
+}
+
 //#endregion
 
 func getShallowGibletObject(objectAssets ObjectAssets) *GibletObject {

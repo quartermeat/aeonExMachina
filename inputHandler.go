@@ -9,9 +9,8 @@ import (
 )
 
 type InputHandler struct {
-	initialized    bool
-	selectedObject IGameObject
-	objectToPlace  IGameObject
+	initialized   bool
+	objectToPlace IGameObject
 }
 
 func (input *InputHandler) InitializeObjectToPlace(object IGameObject) {
@@ -51,7 +50,13 @@ func (input *InputHandler) HandleInput(
 	if win.JustPressed(pixelgl.MouseButtonLeft) && !win.Pressed(pixelgl.KeyLeftControl) {
 		mouse := cam.Unproject(win.MousePosition())
 		// once objectToPlace gets animation information, we can remove the type switch here
-		gameCommands[fmt.Sprintf("AddObject: %s", input.objectToPlace.ObjectName())] = gameObjs.AddObject(input.objectToPlace, mouse)
+		gameCommands[fmt.Sprintf("AddObjectAtPosition: x:%f, y:%f, ObjectType:%s", mouse.X, mouse.Y, input.objectToPlace.ObjectName())] = gameObjs.AddObjectAtPosition(input.objectToPlace, mouse)
+	}
+
+	//move selected object to position
+	if win.JustPressed(pixelgl.MouseButtonRight) {
+		mouse := cam.Unproject(win.MousePosition())
+		gameCommands[fmt.Sprintf("MoveSelectedToPosition: x:%f, y:%f", mouse.X, mouse.Y)] = gameObjs.MoveSelectedToPositionObject(mouse)
 	}
 
 	//handle ctrl functions
@@ -60,40 +65,15 @@ func (input *InputHandler) HandleInput(
 		if win.JustPressed(pixelgl.MouseButtonRight) {
 			mouse := cam.Unproject(win.MousePosition())
 			//add a command to commands
-			gameCommands[fmt.Sprintf("RemoveObject x:%f, y:%f", mouse.X, mouse.Y)] = gameObjs.RemoveObject(mouse)
+			gameCommands[fmt.Sprintf("RemoveObjectAtPosition x:%f, y:%f", mouse.X, mouse.Y)] = gameObjs.RemoveObjectAtPosition(mouse)
 		}
 		if win.JustPressed(pixelgl.MouseButtonLeft) { //ctrl + left click
 			mouse := cam.Unproject(win.MousePosition())
-			newSelectedObject, _, hit, err := gameObjs.getSelectedGameObj(mouse)
-			if err != nil {
-				fmt.Print(err.Error())
-			}
-			if hit { //hit object
-				//unselect last object
-				if input.selectedObject != nil {
-					input.selectedObject.changeState(idle)
-				}
-
-				input.selectedObject = newSelectedObject
-				fmt.Println("object id:", input.selectedObject.getID())
-				switch input.selectedObject.(type) {
-				case *livingObject:
-					{
-						input.selectedObject.changeState(selected)
-					}
-				case *GibletObject:
-					{
-
-					}
-				}
-			} else {
-				//ctrl + LM click && no object hit
-				fmt.Println("ctrl + LM click on empty space")
-			}
+			gameCommands[fmt.Sprintf("SelectObjectAtPosition x:%f, y:%f", mouse.X, mouse.Y)] = gameObjs.SelectObjectAtPosition(mouse)
 		}
 	}
 
-	//toggle hit box draw
+	//toggle global hit box draw for debugging
 	if win.JustPressed(pixelgl.KeyH) {
 		*drawHitBox = !*drawHitBox
 	}
@@ -116,20 +96,11 @@ func (input *InputHandler) HandleInput(
 	*camZoom *= math.Pow(camZoomSpeed, win.MouseScroll().Y)
 
 	// //used for framerate test
-	// if win.Pressed(pixelgl.MouseButtonLeft) {
-	// 	if win.Pressed(pixelgl.KeyLeftShift) {
-	// 		mouse := cam.Unproject(win.MousePosition())
-	// 		switch objectToPlace.(type) {
-	// 		case *livingObject:
-	// 			{
-	// 				gameObjs = gameObjs.appendLivingObject(livingObjectAssets, mouse)
-	// 			}
-	// 		case *GibletObject:
-	// 			{
-	// 				gameObjs = gameObjs.appendGibletObject(gibletObjectAssets, mouse)
-	// 			}
-	// 		}
-	// 	}
-	// }
+	if win.Pressed(pixelgl.MouseButtonLeft) {
+		if win.Pressed(pixelgl.KeyLeftShift) {
+			mouse := cam.Unproject(win.MousePosition())
+			gameCommands[fmt.Sprintf("AddObject: %s", input.objectToPlace.ObjectName())] = gameObjs.AddObjectAtPosition(input.objectToPlace, mouse)
+		}
+	}
 
 }

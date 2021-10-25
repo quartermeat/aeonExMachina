@@ -11,9 +11,10 @@ import (
 type ObjectState int
 
 const (
-	idle   ObjectState = iota
-	moving             //incoming
-	selected
+	idle ObjectState = iota
+	moving
+	selected_idle
+	selected_moving
 )
 
 const (
@@ -36,6 +37,7 @@ type IGameObject interface {
 	update(dt float64, gameObjects GameObjects, waitGroup *sync.WaitGroup)
 	changeState(newState ObjectState)
 	draw(win *pixelgl.Window, drawHitBox bool, waitGroup *sync.WaitGroup)
+	moveToPosition(position pixel.Vec)
 }
 
 //GameObjects is a slice of all the gameObjects
@@ -79,7 +81,7 @@ func (gameObjs GameObjects) drawAllObjects(win *pixelgl.Window, drawHitBox bool,
 	}
 }
 
-func (gameObjs GameObjects) getSelectedGameObj(position pixel.Vec) (IGameObject, int, bool, error) {
+func (gameObjs GameObjects) getSelectedGameObjAtPosition(position pixel.Vec) (IGameObject, int, bool, error) {
 	foundObject := true
 	noIndex := -1
 

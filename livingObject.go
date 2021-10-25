@@ -25,12 +25,17 @@ type livingObject struct {
 	position    pixel.Vec
 	matrix      pixel.Matrix
 	attributes  livingObjAttributes
+	motives     livingObjMotives
 }
 
 type livingObjAttributes struct {
 	initiative float64
 	speed      float64
 	stamina    float64
+}
+
+type livingObjMotives struct {
+	destinationReached bool
 }
 
 //#region GAMEOBJECT IMPLEMENTATION
@@ -89,6 +94,8 @@ func (livingObj *livingObject) update(dt float64, gameObjects GameObjects, waitG
 			livingObj.vel.X = livingObj.attributes.speed * math.Sin(livingObj.dir) * -1
 			livingObj.vel.Y = livingObj.attributes.speed * math.Cos(livingObj.dir)
 			livingObj.matrix = livingObj.matrix.Moved(livingObj.vel.Scaled(dt))
+			//ADD check destination reached is true
+			//check if destination has been reached, turn off destination flag
 			livingObj.position = livingObj.matrix.Project(livingObj.vel.Scaled(dt))
 			livingObj.setHitBox()
 			livingObj.attributes.stamina -= livingObj.counter
@@ -108,6 +115,7 @@ func (livingObj *livingObject) update(dt float64, gameObjects GameObjects, waitG
 					switch otherOject := otherObj.(type) {
 					case *GibletObject:
 						{
+							//FIXME: this needs to be updated
 							livingObj.giblet = otherOject
 							// if livingObj.giblet.host != nil && livingObj.giblet.host != livingObj {
 							// 	//take giblet from other host
@@ -124,15 +132,23 @@ func (livingObj *livingObject) update(dt float64, gameObjects GameObjects, waitG
 				}
 			}
 
+			//ADD:
+			//if destination reached is true
+			//changeState to idle
+
 			if livingObj.attributes.stamina <= 0 {
 				livingObj.changeState(idle)
 			}
 		}
-	case selected:
+	case selected_idle:
 		{
 			//make idle
 			livingObj.sprite.Set(livingObj.assets.sheet, livingObj.assets.anims["idle"][interval%len(livingObj.assets.anims["idle"])])
 			livingObj.attributes.stamina += livingObj.counter
+		}
+	case selected_moving:
+		{
+			//change state to moving
 		}
 	}
 
@@ -152,13 +168,22 @@ func (livingObj *livingObject) changeState(newState ObjectState) {
 			livingObj.dir = float64(rand.Intn(360)) * (math.Pi / 180)
 			livingObj.matrix = livingObj.matrix.Rotated(livingObj.position, livingObj.dir)
 		}
+	case selected_idle:
+		{
+			livingObj.matrix = pixel.IM.Moved(livingObj.position)
+		}
+	case selected_moving:
+		{
+			livingObj.matrix = livingObj.matrix.Rotated(livingObj.position, livingObj.dir)
+			livingObj.motives.destinationReached = false
+		}
 	}
 }
 
 func (livingObj *livingObject) draw(win *pixelgl.Window, drawHitBox bool, waitGroup *sync.WaitGroup) {
 	livingObj.sprite.Draw(win, livingObj.matrix)
 
-	if drawHitBox || livingObj.state == selected {
+	if drawHitBox || livingObj.state == selected_idle {
 		imd := imdraw.New(nil)
 		imd.Color = pixel.RGB(0, 255, 0)
 		imd.Push(livingObj.hitBox.Min, livingObj.hitBox.Max)
@@ -166,6 +191,14 @@ func (livingObj *livingObject) draw(win *pixelgl.Window, drawHitBox bool, waitGr
 		imd.Draw(win)
 	}
 	waitGroup.Done()
+}
+
+func (livingObj *livingObject) moveToPosition(position pixel.Vec) {
+	livingObj.destination = position
+	//calculate angle based on current location vs destination
+	//update object direction based on angle
+
+	livingObj.changeState(selected_moving)
 }
 
 //#endregion
